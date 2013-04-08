@@ -17,9 +17,9 @@
  */
 
 #ifndef __LS1_H__
-#define __ls1_H__
+#define __LS1_H__
 
 #define __DIR_NAME_LEN__	255
-#define __DIR_ARRAY_MAX__	1000
+#define __FILE_ARRAY_MAX__	1000
 
 #endif 
