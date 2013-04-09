@@ -1,6 +1,6 @@
-1: ls1.o
-	gcc ls1.o -o 1
-ls1.o: ls1.c ls1.h
-	gcc -c ls1.c -o ls1.o
+mls: my_ls.o
+	gcc my_ls.o -o mls
+my_ls.o: my_ls.c my_ls.h
+	gcc -c my_ls.c -o my_ls.o
 clean:
 	-rm -f *.o
