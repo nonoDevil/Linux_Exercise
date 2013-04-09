@@ -16,8 +16,8 @@
  * =====================================================================================
  */
 
-#ifndef __LS1_H__
-#define __LS1_H__
+#ifndef __MY_LS_H__
+#define __MY_LS_H__
 
 #define __FILE_NAME_LEN__	255
 #define __FILE_COUNT_MAX__	1000

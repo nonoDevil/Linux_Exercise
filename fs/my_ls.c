@@ -24,7 +24,7 @@
 #include <dirent.h>
 #include <sys/types.h>
 #include <string.h>
-#include "ls1.h"
+#include "my_ls.h"
 
 
 #define DEBUG 1
