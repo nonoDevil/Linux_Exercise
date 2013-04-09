@@ -35,6 +35,17 @@
 #define __PARAM_S__			128		/*-s 根据文件大小排序*/
 #define __PARAM_Q__			256		/*-q 不排序输出*/
 
+#define P_HASA(p) (((p)&(__PARAM_A__))   == (1))
+#define P_HASL(p) (((p)&(__PARAM_L__))   == (1))
+#define P_HASUR(p) (((p)&(__PARAM_UR__)) == (1))
+#define P_HASR(p) (((p)&(__PARAM_R__))   == (1))
+#define P_HASU(p) (((p)&(__PARAM_U__))   == (1))
+#define P_HASI(p) (((p)&(__PARAM_I__))   == (1))
+#define P_HAST(p) (((p)&(__PARAM_T__))   == (1))
+#define P_HASS(p) (((p)&(__PARAM_S__))   == (1))
+#define P_HASQ(p) (((p)&(__PARAM_Q__))   == (1))
+
+
 static int g_parameter = 0;
 
 #endif 
