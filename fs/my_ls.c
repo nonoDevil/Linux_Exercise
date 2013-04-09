@@ -1,14 +1,21 @@
 /*
  * =====================================================================================
  *
- *       file_name:  ls1.c
+ *      file_name:  my_ls.c
  *
  *    Description:  实现ls命令
  *
  *        Version:  1.0 
  *        Created:  2013/04/08/ 08:51:07
- *       Revision:  1.0  (增加打印目录，错误处理函数, )
- *					增加排序(使用qsort())
+ *       Revision:  2013/4/8 {
+ *						增加打印目录，错误处理函数, 
+ *						增加排序(使用qsort())
+ *                  }
+ *                  2013/4/9 {
+ *						重构代码
+ *						实现display_dir(),
+ *						实现displau_file()
+ *					}
  *       Compiler:  gcc
  *
  *         Author:  nonoDevil, linux.kakit@gmail.com
@@ -150,11 +157,9 @@ void display_dir(char *path_name)
 	if ((dir = opendir(path_name)) == NULL) {
 		print_error("opendir", __LINE__);
 		exit(-1);
-	
-	
 	}
-	/*获取该目录下的所有文件名*/
 
+	/*获取该目录下的所有文件名*/
 	while ((dir_cur = readdir(dir)) != NULL) {
 		path_len = strlen(path_name);
 		strncpy(file_name[count], path_name, path_len);
@@ -163,23 +168,65 @@ void display_dir(char *path_name)
 		strncat(file_name[count], dir_cur->d_name, file_len);		
 		count++;
 	}
+	closedir(dir);
+
 #ifdef DEBUG
 	for (i = 0; i < count; i++) {
 		printf("%s\n", file_name[i]);
 	}
 #endif
 	
+	for (i = 0; i < count; i++) {
+		display_file(file_name[i]);
+	}
 
 	return ;
 }
+
+/*
+ * Date: 2013/4/9
+ * Description: 打印文件信息，根据是否有-l 来输出不同的文件信息格式
+ * Parameters: path_name文件路径名
+ */
 void display_file(char *path_name)
 {
+	int i = 0, j = 0;
+	int path_len = 0, file_len = 0;
+	char file_name[NAME_MAX+1]; 
+
+	/*解析路径，只取最后一个"/"后的文件名*/	
+	path_len = strlen(path_name);
+	for (i = 0; i < path_len; i++) {
+		if (path_name[i] == '/') {
+			j = 0;
+			continue;
+		}
+		file_name[j] = path_name[i];
+		j++;
+	}		
+	file_name[j] = '\0';
+#ifdef DEBUG
+	printf("file_name: %s\n", file_name);
+#endif
+
 	return ;
 }
+
+/*
+ * Date: 2013/4/9
+ * Description: 没有-l选项时候的普通打印方式
+ * Parameters: file_name文件明
+ */
 void display_sigle(char *file_name)
 {
 	return ;
 }
+
+/*
+ * Date: 2013/4/9
+ * Description: 有-l选项时，打印文件stat结构体的信息 
+ * Parameters: buf 文件stat信息， file_name 文件名
+ */
 void display_attribute(struct stat *buf, char *file_name)
 {
 	return ;
