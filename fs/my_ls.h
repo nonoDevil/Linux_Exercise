@@ -35,7 +35,7 @@
 #define __PARAM_US__		128		/*-s 根据文件大小排序*/
 #define __PARAM_Q__			256		/*-q 不排序输出*/
 
-#define __S_IFMSB__			007000	/*mask of special bit*/
+#define __S_IFMSB__			07000	/*mask of special bit*/
 
 /*判断是否含有某种参数的宏*/
 #define P_HASA(p)  ((p)&(__PARAM_A__))
@@ -50,7 +50,9 @@
 
 /*判断特殊权限位的宏 special bit*/
 #define S_ISSBIT(mode, mask) (((mode) & __S_IFMSB__) == (mask))
-
-static int g_parameter = 0;
+/*用来记录用户输入的参数*/
+static int g_parameter		= 0;
+static int g_row_size		= 80;
+static int g_row_siz_rest	= 80;
 
 #endif 
