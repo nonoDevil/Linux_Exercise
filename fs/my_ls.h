@@ -50,10 +50,11 @@
 
 /*判断特殊权限位的宏 special bit*/
 #define S_ISSBIT(mode, mask) (((mode) & __S_IFMSB__) == (mask))
-/*用来记录用户输入的参数*/
-static int g_parameter		= 0;
-static int g_row_size		= 80;
-static int g_row_siz_rest	= 80;
-static int g_max_filename	= 0;
+
+static int g_parameter				= 0;		/*用来记录用户输入的ls - 的参数*/
+static int g_row_size				= 80;		/*终端行可显示字符数*/
+static int g_row_siz_rest			= 80;		/*终端行剩余可显示字符数*/
+static int g_dir_longest_file_name	= 0;		/*目录文件下最长的文件名长度*/
+static int g_file_longest_file_name	= 0;		/*最长的文件名长度*/
 
 #endif 
