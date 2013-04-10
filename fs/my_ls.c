@@ -388,7 +388,7 @@ void display_file(char *path_name)
  */
 void display_sigle(struct stat *buf, char *file_name)
 {
-
+	
 	printf("%-s\t", file_name);
 
 	return ;
@@ -418,6 +418,9 @@ void display_attribute(struct stat *buf, char *file_name)
 	time_to_letters(&(buf->st_mtime), time_str);
 
 	/*打印文件信息*/
+	if (P_HASI(g_parameter)) { /*如果有-i参数打印inode*/
+		printf("%-7d ", buf->st_ino);;
+	}
 	printf("%s ",		mode_str);
 	printf("%4d ",		(int )buf->st_nlink);
 	printf("%-s ",		uid_to_name(buf->st_uid));
