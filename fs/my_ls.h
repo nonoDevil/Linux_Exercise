@@ -19,7 +19,7 @@
 #ifndef __MY_LS_H__
 #define __MY_LS_H__
 
-#define __FILE_NAME_LEN__	255
+//#define __FILE_NAME_LEN__	255
 #define __FILE_COUNT_MAX__	1000
 
 /*
@@ -32,7 +32,7 @@
 #define __PARAM_U__			16		/* with -lt: sort by, and show, access time with  -l:  show  access time and sort by name otherwise: sort by access time*/
 #define __PARAM_I__			32		/*-i 打印出每个文件的inode*/
 #define __PARAM_T__			64		/*-t 根据修改时间修改*/
-#define __PARAM_S__			128		/*-s 根据文件大小排序*/
+#define __PARAM_US__			128		/*-s 根据文件大小排序*/
 #define __PARAM_Q__			256		/*-q 不排序输出*/
 
 #define P_HASA(p)  ((p)&(__PARAM_A__))
@@ -42,7 +42,7 @@
 #define P_HASU(p)  ((p)&(__PARAM_U__))
 #define P_HASI(p)  ((p)&(__PARAM_I__))
 #define P_HAST(p)  ((p)&(__PARAM_T__))
-#define P_HASS(p)  ((p)&(__PARAM_S__))  
+#define P_HASUS(p) ((p)&(__PARAM_US__))  
 #define P_HASQ(p)  ((p)&(__PARAM_Q__)) 
 
 
