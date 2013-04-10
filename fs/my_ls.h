@@ -54,5 +54,6 @@
 static int g_parameter		= 0;
 static int g_row_size		= 80;
 static int g_row_siz_rest	= 80;
+static int g_max_filename	= 0;
 
 #endif 
