@@ -29,6 +29,9 @@
  *						实现处理多个目标路径内容显示 do_ls(),
  *						实现特殊位的处理,
  *					}
+ *					2013/4/11 {
+ *						
+ *					}
  *       Compiler:  gcc
  *
  *         Author:  nonoDevil, linux.kakit@gmail.com
@@ -62,7 +65,7 @@ int cmpbymtime(const void *p1, const void *p2);
 int cmpbyatime(const void *p1, const void *p2);
 
 void display_file(char *path_name);
-void display_sigle(char *file_name);
+void display_sigle(struct stat *buf, char *file_name);
 void display_attribute(struct stat *buf, char *file_name);
 void mode_to_letters(const int mode, char *str);
 char *uid_to_name(const uid_t uid);
@@ -372,7 +375,7 @@ void display_file(char *path_name)
 #endif
 		display_attribute(&buf, file_name);		
 	} else {
-		display_sigle(file_name);	/*如果后期sigle模式需要-i的时候，需要更改接口增加struct stat buf*/
+		display_sigle(&buf, file_name);	/*如果后期sigle模式需要-i的时候，需要更改接口增加struct stat buf*/
 	}
 
 	return ;
@@ -383,8 +386,9 @@ void display_file(char *path_name)
  * Description: 没有-l选项时候的普通打印方式
  * Parameters: file_name文件明
  */
-void display_sigle(char *file_name)
+void display_sigle(struct stat *buf, char *file_name)
 {
+
 	printf("%-s\t", file_name);
 
 	return ;
