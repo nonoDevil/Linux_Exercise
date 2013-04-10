@@ -400,35 +400,6 @@ void display_file(char *path_name)
  */
 void display_sigle(struct stat *buf, char *file_name)
 {
-	/*
-	char str[NAME_MAX + 1];
-	int file_len = strlen(file_name);
-
-	strncpy(str, file_name, file_len);
-	str[file_len] = '\0';
-	*/
-	/*根据最长文件名长度，补充不足的空格*/
-/*	if (file_len < g_dir_longest_file_name) {
-		strncat(str, " ", (g_dir_longest_file_name - file_len));	
-		str[g_dir_longest_file_name] = '\0';
-	}
-#ifdef DEBUG
-	printf("strlen(str) = %d", strlen(str));
-#endif
-	*/
-	/*
-	 * 剩余可显示字符数充足，则在当前行显示，并减小剩余可显示字符数
-	 * 否则在下一行显示,并重置可显示字符数
-	 */
-/*	if (g_row_len_rest >= g_dir_longest_file_name) {
-		printf("%-s ", str);
-		g_row_len_rest -= g_dir_longest_file_name;
-	} else {
-		printf("\n");	
-		printf("%-s ", str);
-		g_row_len_rest = __ROW_LEN_MAX__ - g_dir_longest_file_name;
-	}
-*/
 	int i = 0, len = 0;
 
 	/*如果不足以打印最长文件名则换行*/
