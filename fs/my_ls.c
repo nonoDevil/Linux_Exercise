@@ -159,6 +159,9 @@ void display_dir(char *path_name)
 	int count = 0;
 	int i = 0;
 
+	/*打印目录的路径名*/
+	printf("%s:\n", path_name);
+
 	if ((dir = opendir(path_name)) == NULL) {
 		print_error("opendir", __LINE__);
 		exit(-1);
@@ -201,6 +204,13 @@ void display_dir(char *path_name)
 Display:
 	for (i = 0; i < count; i++) {
 		display_file(file_name[i]);
+	}
+	/*
+	 * 打印完目录下的所有文件后，输出一个换行
+	 * 如果没有-l参数，才需要输出此换行，因为-l本身带有-l
+	 */
+	if (!P_HASL(g_parameter)) {
+		printf("\n");
 	}
 
 	return ;
@@ -533,7 +543,7 @@ void do_ls(int argc, char *argv[], int param_count)
 		return ;
 	}
 
-	/*循环扫描argv， 看是否需要打印多个路径*/
+	/*循环扫描argv， 看是否需要打印多个目标路径内容*/
 	i = 1;
 	do {
 		/*处理路径*/
