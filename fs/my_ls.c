@@ -9,12 +9,23 @@
  *        Created:  2013/04/08/ 08:51:07
  *       Revision:  2013/4/8 {
  *						增加打印目录，错误处理函数, 
- *						增加排序(使用qsort())
+ *						增加排序(使用qsort()),
  *                  }
  *                  2013/4/9 {
  *						重构代码
  *						实现display_dir(),
- *						实现displau_file()
+ *						实现display_file(),
+ *					}
+ *					2013/4/10 {
+ *						实现display_attribute(),
+ *						实现mode_to_letters(int mode, char *str),
+ *						实现uid_to_name(uid_t uid),
+ *						实现gid_to_name(gid_t gid),
+ *						实现time_to_letters(time_t *time, char *time_str),
+ *						实现int cmpbystring(const void *p1, const void *p2),
+ *						实现int cmpbysize(const void *p1, const void *p2),
+ *						实现int cmpbymtime(const void *p1, const void *p2),
+ *						实现int cmpbyatime(const void *p1, const void *p2),
  *					}
  *       Compiler:  gcc
  *
@@ -33,15 +44,27 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <linux/limits.h>
+#include <pwd.h>
+#include <grp.h>
+#include <time.h>
 #include "my_ls.h"
 
-#define DEBUG 1
+//#define DEBUG 1
 
 int handle_parameter(int argc, char *argv[]);
 void display_dir(char *path_name);
+int cmpbystring(const void *p1, const void *p2);
+int cmpbysize(const void *p1, const void *p2);
+int cmpbymtime(const void *p1, const void *p2);
+int cmpbyatime(const void *p1, const void *p2);
+
 void display_file(char *path_name);
 void display_sigle(char *file_name);
 void display_attribute(struct stat *buf, char *file_name);
+void mode_to_letters(int mode, char *str);
+char *uid_to_name(uid_t uid);
+char *gid_to_name(gid_t gid);
+void time_to_letters(time_t *time, char *time_str);
 
 void do_ls(const char *dirname);
 void print_error();
@@ -51,7 +74,7 @@ static  int cmpstring(const void *p1, const void *p2);
 
 int main(int argc, char *argv[])
 {
-	char path_name[__FILE_NAME_LEN__];
+	char path_name[PATH_MAX + 1];
 	int  param_count = 0;
 
 	/*处理"-"，返回"第一个字符为"-"的参数个数"*/
@@ -63,7 +86,6 @@ int main(int argc, char *argv[])
 
 	/* 如果没有目标路径，那么输出当前路径的内容 */
 	if (param_count == (argc - 1)) {
-		printf("I am in\n");
 		strcpy(path_name, "./");
 		display_dir(path_name);	
 	}
@@ -111,25 +133,16 @@ int handle_parameter(int argc, char *argv[])
 
 	/* 根据param[]设置命令 eg: -l -a */
 	for (i = 0; i < k; i++) {
-		if (param[i] == 'a') {
-			g_parameter |= __PARAM_A__;
-		} else if (param[i] == 'l') {
-			g_parameter |= __PARAM_L__;
-		} else if (param[i] == 'R') {
-			g_parameter |= __PARAM_R__;
-		} else if (param[i] == 'r') {
-			g_parameter |= __PARAM_UR__;
-		} else if (param[i] == 'u') {
-			g_parameter |= __PARAM_U__;
-		} else if (param[i] == 'i') {
-			g_parameter |= __PARAM_I__;
-		} else if (param[i] == 't') {
-			g_parameter |= __PARAM_T__;
-		} else if (param[i] == 's') {
-			g_parameter |= __PARAM_S__;
-		} else if (param[i] == 'q') {
-			g_parameter |= __PARAM_Q__;
-		} else {
+		if (param[i] == 'a')		g_parameter |= __PARAM_A__;
+		else if (param[i] == 'l')	g_parameter |= __PARAM_L__;
+		else if (param[i] == 'r')	g_parameter |= __PARAM_R__;
+		else if (param[i] == 'R')	g_parameter |= __PARAM_UR__;
+		else if (param[i] == 'u')	g_parameter |= __PARAM_U__;
+		else if (param[i] == 'i')	g_parameter |= __PARAM_I__;
+		else if (param[i] == 't')	g_parameter |= __PARAM_T__;
+		else if (param[i] == 'S')	g_parameter |= __PARAM_US__;
+		else if (param[i] == 'q')	g_parameter |= __PARAM_Q__;
+		else {
 			printf("Can not recognize the parameter \"%c\"\n", param[i]);
 			printf("Please try to ls --help to get more help.\n");
 			exit(0);
@@ -170,18 +183,146 @@ void display_dir(char *path_name)
 	}
 	closedir(dir);
 
+	/*排序,根据不同参数进行排序*/
+	/*有-q 不排序输出，加快输出速度*/
+	if (P_HASQ(g_parameter)) {
+		goto Display;
+	} else {
+		if (P_HASU(g_parameter)) {
+			qsort(file_name, count, PATH_MAX + 1, cmpbyatime);	
+		} else if (P_HAST(g_parameter)) {
+			qsort(file_name, count, PATH_MAX + 1, cmpbymtime);
+		} else if (P_HASUS(g_parameter)) {
+			qsort(file_name, count, PATH_MAX + 1, cmpbysize);
+		} else {
+			qsort(file_name, count, PATH_MAX + 1, cmpbystring);
+		}
+	}
+
+
 #ifdef DEBUG
 	for (i = 0; i < count; i++) {
 		printf("%s\n", file_name[i]);
 	}
 #endif
-	
+
+Display:
 	for (i = 0; i < count; i++) {
 		display_file(file_name[i]);
 	}
 
 	return ;
 }
+
+/* 
+ * Date: 2013/4/10
+ * Description: 根据访问时间排序
+ */
+int cmpbyatime(const void *p1, const void *p2)
+{
+	struct stat buf1;
+	struct stat buf2;
+	int value = 0;
+
+	if (lstat((char *)p1, &buf1) == -1) {
+		print_error("lstat", __LINE__);
+	} 
+	if (lstat((char *)p2, &buf2) == -1) {
+		print_error("lstat", __LINE__);
+	} 
+
+	value = buf1.st_atime - buf2.st_atime;
+	/*如果两个大小相等, 按字符串字段顺序排序*/
+	if (value == 0) {
+		return cmpbystring(p1, p2);
+	} else {
+		/*有-r参数逆序输出*/
+		if (P_HASR(g_parameter)) {
+			return (0 - value);
+		} else {
+			return value;
+		}
+	}
+	
+}
+
+/* 
+ * Date: 2013/4/10
+ * Description: 根据修改时间排序
+ */
+int cmpbymtime(const void *p1, const void *p2)
+{
+	struct stat buf1;
+	struct stat buf2;
+	int value = 0;
+
+	if (lstat((char *)p1, &buf1) == -1) {
+		print_error("lstat", __LINE__);
+	} 
+	if (lstat((char *)p2, &buf2) == -1) {
+		print_error("lstat", __LINE__);
+	} 
+
+	value = (int)(buf1.st_mtime - buf2.st_mtime);
+	/*如果两个大小相等, 按字符串字段顺序排序*/
+	if (value == 0) {
+		return cmpbystring(p1, p2);
+	} else {
+		/*有-r参数逆序输出*/
+		if (P_HASR(g_parameter)) {
+			return (0 - value);
+		} else {
+			return value;
+		}
+	}
+	
+}
+
+/* 
+ * Date: 2013/4/10
+ * Description: 根据文件大小排序
+ */
+int cmpbysize(const void *p1, const void *p2)
+{
+	struct stat buf1;
+	struct stat buf2;
+	int value = 0;
+
+	if (lstat((char *)p1, &buf1) == -1) {
+		print_error("lstat", __LINE__);
+	} 
+	if (lstat((char *)p2, &buf2) == -1) {
+		print_error("lstat", __LINE__);
+	} 
+
+	value = buf1.st_size - buf2.st_size;
+	/*如果两个大小相等, 按字符串字段顺序排序*/
+	if (value == 0) {
+		return cmpbystring(p1, p2);
+	} else {
+		/*有-r参数逆序输出*/
+		if (P_HASR(g_parameter)) {
+			return (0 - value);
+		} else {
+			return value;
+		}
+	}
+}
+
+/* 
+ * Date: 2013/4/10
+ * Description: 根据字典顺序排序
+ */
+int cmpbystring(const void *p1, const void *p2)
+{
+	/*有-r参数则逆序输出*/
+	if (P_HASR(g_parameter)) {
+		return strcmp((char *)p2, (char *)p1);
+	} else {
+		return strcmp((char *)p1, (char *)p2);
+	}
+}
+
 
 /*
  * Date: 2013/4/9
@@ -193,6 +334,13 @@ void display_file(char *path_name)
 	int i = 0, j = 0;
 	int path_len = 0, file_len = 0;
 	char file_name[NAME_MAX+1]; 
+	struct stat buf;
+
+	/*获取文件信息*/
+	if (lstat(path_name, &buf) == -1) {
+		print_error("lstat", __LINE__);
+		exit(-1);
+	}
 
 	/*解析路径，只取最后一个"/"后的文件名*/	
 	path_len = strlen(path_name);
@@ -207,7 +355,22 @@ void display_file(char *path_name)
 	file_name[j] = '\0';
 #ifdef DEBUG
 	printf("file_name: %s\n", file_name);
+	printf("g_parameter = %d\n", g_parameter);
+	printf("P_HASL(g_parameter) = %d\n", P_HASL(g_parameter));
+#endif	
+
+
+
+
+	/*判断是否有-l 来进行不同格式的输出*/
+	if (P_HASL(g_parameter)) {
+#ifdef DEBUG
+		printf("I am in \n");
 #endif
+		display_attribute(&buf, file_name);		
+	} else {
+		display_sigle(file_name);	/*如果后期sigle模式需要-i的时候，需要更改接口增加struct stat buf*/
+	}
 
 	return ;
 }
@@ -219,6 +382,8 @@ void display_file(char *path_name)
  */
 void display_sigle(char *file_name)
 {
+	printf("%-s\t", file_name);
+
 	return ;
 }
 
@@ -226,11 +391,130 @@ void display_sigle(char *file_name)
  * Date: 2013/4/9
  * Description: 有-l选项时，打印文件stat结构体的信息 
  * Parameters: buf 文件stat信息， file_name 文件名
+ * Effect: mode links owner group size last-modified name
  */
 void display_attribute(struct stat *buf, char *file_name)
 {
+	char mode_str[11];
+	char time_str[32];
+
+	/*判断是否有-a, 没有-a，则过滤隐藏文件*/
+	if (!P_HASA(g_parameter)) {
+		if (file_name[0] == '.') {
+			return ;
+		}
+	}
+
+
+	/*文件类型及权限位获取*/
+	mode_to_letters((int)buf->st_mode, mode_str);
+	time_to_letters(&(buf->st_mtime), time_str);
+
+	/*打印文件信息*/
+	printf("%s ",	mode_str);
+	printf("%-d ",	(int )buf->st_nlink);
+	printf("%-s ",	uid_to_name(buf->st_uid));
+	printf("%-s ",	gid_to_name(buf->st_gid));
+	printf("%10ld ",	(long )buf->st_size);
+	printf("%s ", time_str);
+	printf("%s\n",	file_name);
+
+
 	return ;
 }
+
+
+/*
+ * Date: 2013/4/10
+ * Description: 将属性权限转换成字母
+ */
+void mode_to_letters(int mode, char *str)
+{
+	strncpy(str, "----------", 10);
+	str[10] = '\0';
+	
+	/*文件类型判断*/
+	if (S_ISDIR(mode))			str[0] = 'd';
+	else if (S_ISCHR(mode))		str[0] = 'c';
+	else if (S_ISBLK(mode))		str[0] = 'b';
+	else if (S_ISREG(mode))		str[0] = '-';
+	else if (S_ISFIFO(mode))	str[0] = 'f';
+	else if (S_ISLNK(mode))		str[0] = 'l';
+	else if (S_ISSOCK(mode)) 	str[0] = 's';	
+	
+	/*判断权限位*/
+	/*user*/
+	if (mode & S_IRUSR)			str[1] = 'r';
+	if (mode & S_IWUSR)			str[2] = 'w';
+	if (mode & S_IXUSR)			str[3] = 'x';
+	/*group*/
+	if (mode & S_IRGRP)			str[4] = 'r';
+	if (mode & S_IWGRP)			str[5] = 'w';
+	if (mode & S_IXGRP)			str[6] = 'x';
+	/*other*/
+	if (mode & S_IROTH)			str[7] = 'r';
+	if (mode & S_IWOTH)			str[8] = 'w';
+	if (mode & S_IXOTH)			str[9] = 'x';
+
+#ifdef DEBUG
+	printf("mode: %s\n", str);
+#endif
+
+	return ;
+}
+
+/*
+ * Date: 2013/4/10
+ * Description: 将uid转换成字符
+ */
+char *uid_to_name(uid_t uid)
+{
+	struct passwd *pw_ptr = NULL;
+	static char num_str[10];
+
+	if ((pw_ptr = getpwuid(uid)) == NULL) {
+		sprintf(num_str, "%d", uid);
+		return num_str;
+	} else {
+		//return pw_ptr->pw_passwd;
+		return pw_ptr->pw_name;
+	}
+}
+
+/*
+ * Date: 2013/4/10
+ * Description:　将gid转换成字符
+ */
+char *gid_to_name(gid_t gid)
+{
+	struct group *grp_ptr = NULL;
+	static char num_str[10];
+
+	if ((grp_ptr = getgrgid(gid)) == NULL) {
+		sprintf(num_str, "%d", gid);
+		return num_str;
+	} else {
+		return grp_ptr->gr_name;
+	}
+}
+
+/*
+ * Date: 2013/4/10
+ * Description: 将时间转换成字符串格式
+ */
+void time_to_letters(time_t *time, char *time_str)
+{
+
+	strncpy(time_str, ctime(time), strlen(ctime(time)));
+#ifdef DEBUG
+	printf("strlen(cimte(time)) = %d\n", strlen(ctime(time)));
+#endif
+	/*去除time_str最后的\n*/
+	time_str[strlen(ctime(time)) - 1] = '\0';
+		
+	return ;
+}
+
 
 /*
  * Date: 2013/4/8
@@ -240,7 +524,7 @@ void do_ls(const char *dirname)
 {
 	DIR *dir_ptr = NULL;
 	struct dirent *dir_cur = NULL;
-	char file_name[__FILE_COUNT_MAX__][__FILE_NAME_LEN__]; /*[1000][255]*/ 
+	char file_name[__FILE_COUNT_MAX__][NAME_MAX+1]; /*[1000][255]*/ 
 	int count = 0;	/*统计目录下的文件数*/
 	int i = 0;
 
