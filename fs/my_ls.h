@@ -35,6 +35,8 @@
 #define __PARAM_US__		128		/*-s 根据文件大小排序*/
 #define __PARAM_Q__			256		/*-q 不排序输出*/
 
+#define __S_IFMSB__			007000	/*mask of special bit*/
+
 /*判断是否含有某种参数的宏*/
 #define P_HASA(p)  ((p)&(__PARAM_A__))
 #define P_HASL(p)  ((p)&(__PARAM_L__))
@@ -44,8 +46,10 @@
 #define P_HASI(p)  ((p)&(__PARAM_I__))
 #define P_HAST(p)  ((p)&(__PARAM_T__))
 #define P_HASUS(p) ((p)&(__PARAM_US__))  
-#define P_HASQ(p)  ((p)&(__PARAM_Q__)) 
+#define P_HASQ(p)  ((p)&(__PARAM_Q__))
 
+/*判断特殊权限位的宏 special bit*/
+#define S_ISSBIT(mode, mask) (((mode) & __S_IFMSB__) == (mask))
 
 static int g_parameter = 0;
 
