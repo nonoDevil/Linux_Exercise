@@ -27,6 +27,7 @@
  *						实现cmpbymtime(),
  *						实现cmpbyatime(),
  *						实现处理多个目标路径内容显示 do_ls(),
+ *						实现特殊位的处理,
  *					}
  *       Compiler:  gcc
  *
@@ -436,27 +437,33 @@ void mode_to_letters(const int mode, char *str)
 	str[10] = '\0';
 	
 	/*文件类型判断*/
-	if (S_ISDIR(mode))			str[0] = 'd';
-	else if (S_ISCHR(mode))		str[0] = 'c';
-	else if (S_ISBLK(mode))		str[0] = 'b';
-	else if (S_ISREG(mode))		str[0] = '-';
-	else if (S_ISFIFO(mode))	str[0] = 'f';
-	else if (S_ISLNK(mode))		str[0] = 'l';
-	else if (S_ISSOCK(mode)) 	str[0] = 's';	
+	if (S_ISDIR(mode))				str[0] = 'd';
+	else if (S_ISCHR(mode))			str[0] = 'c';
+	else if (S_ISBLK(mode))			str[0] = 'b';
+	else if (S_ISREG(mode))			str[0] = '-';
+	else if (S_ISFIFO(mode))		str[0] = 'f';
+	else if (S_ISLNK(mode))			str[0] = 'l';
+	else if (S_ISSOCK(mode))		str[0] = 's';	
 	
 	/*判断权限位*/
 	/*user*/
-	if (mode & S_IRUSR)			str[1] = 'r';
-	if (mode & S_IWUSR)			str[2] = 'w';
-	if (mode & S_IXUSR)			str[3] = 'x';
+	if (mode & S_IRUSR)				str[1] = 'r';
+	if (mode & S_IWUSR)				str[2] = 'w';
+	if (mode & S_IXUSR)				str[3] = 'x';
+	/*set-user-ID*/
+	if (S_ISSBIT(mode, S_ISUID))	str[3] = 's';
 	/*group*/
-	if (mode & S_IRGRP)			str[4] = 'r';
-	if (mode & S_IWGRP)			str[5] = 'w';
-	if (mode & S_IXGRP)			str[6] = 'x';
+	if (mode & S_IRGRP)				str[4] = 'r';
+	if (mode & S_IWGRP)				str[5] = 'w';
+	if (mode & S_IXGRP)				str[6] = 'x';
+	/*set-group-ID*/
+	if (S_ISSBIT(mode, S_ISGID))	str[6] = 'S';
 	/*other*/
-	if (mode & S_IROTH)			str[7] = 'r';
-	if (mode & S_IWOTH)			str[8] = 'w';
-	if (mode & S_IXOTH)			str[9] = 'x';
+	if (mode & S_IROTH)				str[7] = 'r';
+	if (mode & S_IWOTH)				str[8] = 'w';
+	if (mode & S_IXOTH)				str[9] = 'x';
+	/*set sticky*/
+	if (S_ISSBIT(mode, S_ISVTX))	str[9] = 't';
 
 #ifdef DEBUG
 	printf("mode: %s\n", str);
