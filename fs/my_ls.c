@@ -18,14 +18,15 @@
  *					}
  *					2013/4/10 {
  *						实现display_attribute(),
- *						实现mode_to_letters(int mode, char *str),
- *						实现uid_to_name(uid_t uid),
- *						实现gid_to_name(gid_t gid),
- *						实现time_to_letters(time_t *time, char *time_str),
- *						实现int cmpbystring(const void *p1, const void *p2),
- *						实现int cmpbysize(const void *p1, const void *p2),
- *						实现int cmpbymtime(const void *p1, const void *p2),
- *						实现int cmpbyatime(const void *p1, const void *p2),
+ *						实现mode_to_letters(),
+ *						实现uid_to_name(),
+ *						实现gid_to_name(),
+ *						实现time_to_letters(),
+ *						实现cmpbystring(),
+ *						实现cmpbysize(),
+ *						实现cmpbymtime(),
+ *						实现cmpbyatime(),
+ *						实现处理多个目标路径内容显示 do_ls(),
  *					}
  *       Compiler:  gcc
  *
@@ -52,6 +53,7 @@
 //#define DEBUG 1
 
 int handle_parameter(int argc, char *argv[]);
+void do_ls(int argc, char *argv[], int param_count);
 void display_dir(char *path_name);
 int cmpbystring(const void *p1, const void *p2);
 int cmpbysize(const void *p1, const void *p2);
@@ -61,12 +63,11 @@ int cmpbyatime(const void *p1, const void *p2);
 void display_file(char *path_name);
 void display_sigle(char *file_name);
 void display_attribute(struct stat *buf, char *file_name);
-void mode_to_letters(int mode, char *str);
-char *uid_to_name(uid_t uid);
-char *gid_to_name(gid_t gid);
+void mode_to_letters(const int mode, char *str);
+char *uid_to_name(const uid_t uid);
+char *gid_to_name(const gid_t gid);
 void time_to_letters(time_t *time, char *time_str);
 
-void do_ls(const char *dirname);
 void print_error();
 void print_format();
 static  int cmpstring(const void *p1, const void *p2);
@@ -74,8 +75,7 @@ static  int cmpstring(const void *p1, const void *p2);
 
 int main(int argc, char *argv[])
 {
-	char path_name[PATH_MAX + 1];
-	int  param_count = 0;
+	int		param_count = 0;
 
 	/*处理"-"，返回"第一个字符为"-"的参数个数"*/
 	param_count = handle_parameter(argc, argv);
@@ -83,16 +83,8 @@ int main(int argc, char *argv[])
 #ifdef DEBUG
 	printf("param_count: %d\n", param_count);
 #endif
-
-	/* 如果没有目标路径，那么输出当前路径的内容 */
-	if (param_count == (argc - 1)) {
-		strcpy(path_name, "./");
-		display_dir(path_name);	
-	}
-
-
-
-	//do_ls(dirname);
+	/*循环扫描argv， 判断需要打印的目标路径内容*/
+	do_ls(argc, argv, param_count);
 
 	return EXIT_SUCCESS;
 }
@@ -411,13 +403,13 @@ void display_attribute(struct stat *buf, char *file_name)
 	time_to_letters(&(buf->st_mtime), time_str);
 
 	/*打印文件信息*/
-	printf("%s ",	mode_str);
-	printf("%-d ",	(int )buf->st_nlink);
-	printf("%-s ",	uid_to_name(buf->st_uid));
-	printf("%-s ",	gid_to_name(buf->st_gid));
+	printf("%s ",		mode_str);
+	printf("%4d ",		(int )buf->st_nlink);
+	printf("%-s ",		uid_to_name(buf->st_uid));
+	printf("%-s ",		gid_to_name(buf->st_gid));
 	printf("%10ld ",	(long )buf->st_size);
-	printf("%s ", time_str);
-	printf("%s\n",	file_name);
+	printf("%s ",		time_str);
+	printf("%s\n",		file_name);
 
 
 	return ;
@@ -428,7 +420,7 @@ void display_attribute(struct stat *buf, char *file_name)
  * Date: 2013/4/10
  * Description: 将属性权限转换成字母
  */
-void mode_to_letters(int mode, char *str)
+void mode_to_letters(const int mode, char *str)
 {
 	strncpy(str, "----------", 10);
 	str[10] = '\0';
@@ -467,7 +459,7 @@ void mode_to_letters(int mode, char *str)
  * Date: 2013/4/10
  * Description: 将uid转换成字符
  */
-char *uid_to_name(uid_t uid)
+char *uid_to_name(const uid_t uid)
 {
 	struct passwd *pw_ptr = NULL;
 	static char num_str[10];
@@ -485,7 +477,7 @@ char *uid_to_name(uid_t uid)
  * Date: 2013/4/10
  * Description:　将gid转换成字符
  */
-char *gid_to_name(gid_t gid)
+char *gid_to_name(const gid_t gid)
 {
 	struct group *grp_ptr = NULL;
 	static char num_str[10];
@@ -518,37 +510,62 @@ void time_to_letters(time_t *time, char *time_str)
 
 /*
  * Date: 2013/4/8
+ * Revision: 2013/4/10  {
+ *				重构do_ls,
+ *				循环扫描argv，输出一个或多个目标路径内容,
+ *
+ *			 }
  * Description: 打印目录
  */
-void do_ls(const char *dirname)
+void do_ls(int argc, char *argv[], int param_count)
 {
-	DIR *dir_ptr = NULL;
-	struct dirent *dir_cur = NULL;
-	char file_name[__FILE_COUNT_MAX__][NAME_MAX+1]; /*[1000][255]*/ 
-	int count = 0;	/*统计目录下的文件数*/
-	int i = 0;
+	struct	stat buf;
+	char	path_name[PATH_MAX + 1];
+	int		path_len = 0;
+	int		i = 0;
 
-	if ((dir_ptr = opendir(dirname)) == NULL) {
-		print_error("opendir", __LINE__);
-	} else {
-		while ((dir_cur = readdir(dir_ptr)) != NULL) {
-			strncpy(file_name[count], dir_cur->d_name, strlen(dir_cur->d_name));
-			count++;
+
+	/* 如果没有目标路径，那么输出当前路径的内容 */
+	if (param_count == (argc - 1)) {
+		strncpy(path_name, "./", 2);
+		path_name[2] = '\0';
+		display_dir(path_name);	
+		return ;
+	}
+
+	/*循环扫描argv， 看是否需要打印多个路径*/
+	i = 1;
+	do {
+		/*处理路径*/
+		if (argv[i][0] == '-') {
+			i++;
+			continue;
 		}
-		closedir(dir_ptr);
-	}
-	
-	printf("sizeof(file_name[0]) = %d\n", sizeof(file_name[0]));
-	qsort(file_name, count, sizeof(file_name[0]), cmpstring);
-
-	for (i = 0; i < count; i++) {
-		printf("%s\n", file_name[i]);
-	}
-
+		path_len = strlen(argv[i]);
+		strncpy(path_name, argv[i], path_len);
+		path_name[path_len] = '\0';
 #ifdef DEBUG
-	printf("the total file number is %d\n", count);
-#endif 
+		printf("path_name = %s\n", path_name);
+#endif
+		if (lstat(path_name, &buf) == -1) {
+			print_error("lstat", __LINE__);
+			exit(-1);
+		}
 
+		/*根据type信息，判断是文件还是目录*/
+		if (S_ISDIR(buf.st_mode)) {	/*判断是否是目录*/
+			/*如果目录的最后一个字符不是"/"，则加上"/"*/
+			if(path_name[path_len - 1] != '/') {
+				path_name[path_len] = '/';
+				path_name[path_len + 1] = '\0';
+			}	
+			display_dir(path_name);	
+		} else {		/*说明是文件*/
+			display_file(path_name);
+		}
+
+		i++;
+	} while(i < argc);
 	return ;
 }
 
