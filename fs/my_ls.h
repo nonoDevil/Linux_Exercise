@@ -19,8 +19,7 @@
 #ifndef __MY_LS_H__
 #define __MY_LS_H__
 
-//#define __FILE_NAME_LEN__	255
-#define __FILE_COUNT_MAX__	1000
+#define __FILE_COUNT_MAX__	255
 
 /*
  * 默认是小写参数，如果参数为大写，则加上U(表示upper)
@@ -52,11 +51,11 @@
 #define S_ISSBIT(mode, mask) (((mode) & __S_IFMSB__) == (mask))
 
 /*终端行可显示字符数*/
-#define __ROW_LEN_MAX__			80
+#define __ROW_LEN_MAX__     80
 
 static int g_parameter              = 0;				/*用来记录用户输入的ls - 的参数*/
 static int g_row_len_rest           = __ROW_LEN_MAX__;	/*终端一行剩余可显示字符数*/
 static int g_dir_longest_file_name  = 0;				/*目录文件下最长的文件名长度*/
-static int g_file_longest_file_name = 0;		/*最长的文件名长度*/
+//static int g_file_longest_file_name = 0;		/*最长的文件名长度*/
 
 #endif 
