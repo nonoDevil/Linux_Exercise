@@ -8,35 +8,35 @@
  *        Version:  1.0 
  *        Created:  2013/04/08/ 08:51:07
  *       Revision:  2013/4/8 {
- *						增加打印目录，错误处理函数, 
- *						增加排序(使用qsort()),
+ *                      增加打印目录，错误处理函数, 
+ *                      增加排序(使用qsort()),
  *                  }
  *                  2013/4/9 {
- *						重构代码
- *						实现display_dir(),
- *						实现display_file(),
- *					}
- *					2013/4/10 {
- *						实现display_attribute(),
- *						实现mode_to_letters(),
- *						实现uid_to_name(),
- *						实现gid_to_name(),
- *						实现time_to_letters(),
- *						实现cmpbystring(),
- *						实现cmpbysize(),
- *						实现cmpbymtime(),
- *						实现cmpbyatime(),
- *						实现处理多个目标路径内容显示 do_ls(),
- *						实现特殊位的处理,
- *					}
- *					2013/4/11 {
- *						实现文件分栏显示,
- *						实现对带汉字文件的对齐显示,
- *						实现递归打印目录内的内容,修复打印时的段错误(错误原因：定义的file_name数组过大),
- *					}
- *					2013/4/12 {
- *						修复拷贝错误bug, stncpy执行完后需要补充'\0' 
- *					}
+ *                      重构代码
+ *                      实现display_dir(),
+ *                      实现display_file(),
+ *                  }
+ *                  2013/4/10 {
+ *                      实现display_attribute(),
+ *                      实现mode_to_letters(),
+ *                      实现uid_to_name(),
+ *                      实现gid_to_name(),
+ *                      实现time_to_letters(),
+ *                      实现cmpbystring(),
+ *                      实现cmpbysize(),
+ *                      实现cmpbymtime(),
+ *                      实现cmpbyatime(),
+ *                      实现处理多个目标路径内容显示 do_ls(),
+ *                      实现特殊位的处理,
+ *                  }
+ *                  2013/4/11 {
+ *                      实现文件分栏显示,
+ *                      实现对带汉字文件的对齐显示,
+ *                      实现递归打印目录内的内容,修复打印时的段错误(错误原因：定义的file_name数组过大),
+ *                  }
+ *                  2013/4/12 {
+ *                      修复拷贝错误bug, stncpy执行完后需要补充'\0' 
+ *                  }
  *       Compiler:  gcc
  *
  *         Author:  nonoDevil, linux.kakit@gmail.com
