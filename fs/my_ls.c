@@ -34,6 +34,9 @@
  *						实现对带汉字文件的对齐显示,
  *						实现递归打印目录内的内容,修复打印时的段错误(错误原因：定义的file_name数组过大),
  *					}
+ *					2013/4/12 {
+ *						修复拷贝错误bug, stncpy执行完后需要补充'\0' 
+ *					}
  *       Compiler:  gcc
  *
  *         Author:  nonoDevil, linux.kakit@gmail.com
@@ -162,26 +165,13 @@ void display_dir(char path_name[])
 	struct stat   buf;
 	char str[PATH_MAX+1];
 	char file_name[__FILE_COUNT_MAX__][PATH_MAX+1];
+//	char file_name[255][255];
 	int path_len = 0; 
 	int file_len = 0;
 	int count = 0;
 	int i = 0, j = 0, k = 0;
 	char dir_name[PATH_MAX+1];
 	
-	/*动态分配内存*/
-	/*
-	if (!(file_name = (char **)malloc(sizeof(char *)*__FILE_COUNT_MAX__))) {
-		print_error("malloc", __LINE__);
-		exit(-1);
-	}
-	for (i = 0; i < PATH_MAX+1; i++) {
-		if (!(file_name[i] = (char *)malloc(sizeof(*file_name)))) {
-			print_error("malloc", __LINE__);
-			exit(-1);
-		}
-	}
-	i = 0;
-	*/
 	/*
 	 * 设置目录下的最长文件名长度
 	 * 由于不同目录下的最长文件名长度不同，
@@ -192,10 +182,12 @@ void display_dir(char path_name[])
 
 	/*打印目录的路径名*/
 	strncpy(dir_name, path_name, strlen(path_name));
+	dir_name[strlen(path_name)] = '\0';
 	printf("%s:\n", dir_name);
 
 	if ((dir = opendir(dir_name)) == NULL) {
 		print_error("opendir", __LINE__);
+		fprintf(stderr, "%s\n", dir_name);
 		exit(-1);
 	}
 
@@ -300,10 +292,14 @@ Display:
 				}
 				//file_len = strlen(file_name[i]);
 				/*如果目录的最后一个字符不是"/"，则加上"/"*/
+				path_len = strlen(file_name[i]);
 				if(file_name[i][path_len - 1] != '/') {
 					file_name[i][path_len] = '/';
 					file_name[i][path_len + 1] = '\0';
 				}	
+				path_len = strlen(file_name[i]);
+				printf("test:len = %d file_name = %s\t", path_len, file_name[i]);
+				printf("\n");
 				//strncpy(str, file_name[i], strlen(file_name[i]));
 				//str[strlen(file_name[i])] = '\0';
 				display_dir(file_name[i]);	
