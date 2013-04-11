@@ -1,6 +1,4 @@
-mls: my_ls.o
-	gcc my_ls.o -o mls
-my_ls.o: my_ls.c my_ls.h
-	gcc -c my_ls.c -o my_ls.o
+mls: my_ls.c 
+	gcc -g -Wall my_ls.c -o mls
 clean:
 	-rm -f *.o
