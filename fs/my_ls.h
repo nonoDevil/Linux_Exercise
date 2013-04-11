@@ -19,7 +19,7 @@
 #ifndef __MY_LS_H__
 #define __MY_LS_H__
 
-#define __FILE_COUNT_MAX__	255
+#define __FILE_COUNT_MAX__	255		/*利用-R 打印"/"目录做测试,255的值能显示的文件数最多*/
 
 /*
  * 默认是小写参数，如果参数为大写，则加上U(表示upper)
