@@ -28,10 +28,11 @@
  *						实现cmpbyatime(),
  *						实现处理多个目标路径内容显示 do_ls(),
  *						实现特殊位的处理,
- *						实现对带汉字文件的对齐显示,
  *					}
  *					2013/4/11 {
  *						实现文件分栏显示,
+ *						实现对带汉字文件的对齐显示,
+ *						实现递归打印目录内的内容,修复打印时的段错误(错误原因：定义的file_name数组过大),
  *					}
  *       Compiler:  gcc
  *
@@ -59,7 +60,7 @@
 
 int handle_parameter(int argc, char *argv[]);
 void do_ls(int argc, char *argv[], int param_count);
-void display_dir(char *path_name);
+void display_dir(char path_name[]);
 int cmpbystring(const void *p1, const void *p2);
 int cmpbysize(const void *p1, const void *p2);
 int cmpbymtime(const void *p1, const void *p2);
@@ -75,7 +76,7 @@ void time_to_letters(time_t *time, char *time_str);
 
 void print_error();
 void print_format();
-static  int cmpstring(const void *p1, const void *p2);
+//static  int cmpstring(const void *p1, const void *p2);
 
 
 int main(int argc, char *argv[])
@@ -154,16 +155,33 @@ int handle_parameter(int argc, char *argv[])
  * Description: 输出目录内容
  * Parameters: path_name目录名
  */
-void display_dir(char *path_name)
+void display_dir(char path_name[])
 {
 	DIR *dir = NULL;
 	struct dirent *dir_cur = NULL;
+	struct stat   buf;
+	char str[PATH_MAX+1];
 	char file_name[__FILE_COUNT_MAX__][PATH_MAX+1];
 	int path_len = 0; 
 	int file_len = 0;
 	int count = 0;
-	int i = 0;
+	int i = 0, j = 0, k = 0;
+	char dir_name[PATH_MAX+1];
 	
+	/*动态分配内存*/
+	/*
+	if (!(file_name = (char **)malloc(sizeof(char *)*__FILE_COUNT_MAX__))) {
+		print_error("malloc", __LINE__);
+		exit(-1);
+	}
+	for (i = 0; i < PATH_MAX+1; i++) {
+		if (!(file_name[i] = (char *)malloc(sizeof(*file_name)))) {
+			print_error("malloc", __LINE__);
+			exit(-1);
+		}
+	}
+	i = 0;
+	*/
 	/*
 	 * 设置目录下的最长文件名长度
 	 * 由于不同目录下的最长文件名长度不同，
@@ -173,27 +191,30 @@ void display_dir(char *path_name)
 	g_row_len_rest = 80;
 
 	/*打印目录的路径名*/
-	printf("%s:\n", path_name);
+	strncpy(dir_name, path_name, strlen(path_name));
+	printf("%s:\n", dir_name);
 
-	if ((dir = opendir(path_name)) == NULL) {
+	if ((dir = opendir(dir_name)) == NULL) {
 		print_error("opendir", __LINE__);
 		exit(-1);
 	}
 
 	/*获取该目录下的所有文件名*/
 	while ((dir_cur = readdir(dir)) != NULL) {
-		path_len = strlen(path_name);
+		path_len = strlen(dir_name);
 		strncpy(file_name[count], path_name, path_len);
 		file_name[count][path_len] = '\0';
 		file_len = strlen(dir_cur->d_name);
 		strncat(file_name[count], dir_cur->d_name, file_len);		
 		count++;
+		
 		/*获取最长文件名长度*/
 		if (file_len > g_dir_longest_file_name) {
 			g_dir_longest_file_name = file_len;  	
 		}
 	}
 	closedir(dir);
+
 
 	/*排序,根据不同参数进行排序*/
 	/*有-q 不排序输出，加快输出速度*/
@@ -210,15 +231,17 @@ void display_dir(char *path_name)
 			qsort(file_name, count, PATH_MAX + 1, cmpbystring);
 		}
 	}
-
-
 #ifdef DEBUG
 	for (i = 0; i < count; i++) {
-		printf("%s\n", file_name[i]);
+		printf("%s\t", file_name[i]);
 	}
+	printf("\n");
 #endif
 
 Display:
+	//assert(path_name != NULL);
+//	printf("%s: \n", path_name);
+	/*先打印完文件内容，再处理递归输出文件内容*/
 	for (i = 0; i < count; i++) {
 		display_file(file_name[i]);
 	}
@@ -228,6 +251,66 @@ Display:
 	 */
 	if (!P_HASL(g_parameter)) {
 		printf("\n");
+	}
+	/*如果有-R 参数，递归输出目录内容*/
+	if (P_HASUR(g_parameter)) {
+		for (i = 0; i < count; i++) {
+			/*获取目标路径信息*/
+			if (lstat(file_name[i], &buf) == -1) {
+				print_error("lstat", __LINE__);
+				exit(-1);
+			}
+			/*
+			 * 根据type信息，判断是文件还是目录
+			 * 是目录的话，调用dir，实现递归打印目录文件内容
+			 */
+			if (S_ISDIR(buf.st_mode)) {	/*判断是否是目录*/
+				/*补齐*/
+				path_len = strlen(file_name[i]);
+				//if (file_name[i][path_len - 1] != '/') {
+				//	file_name[i][path_len] = '/';
+				//	file_name[i][path_len + 1] = '\0';
+				//	path_len += 1;
+				//}
+				//if (file_name[i][path_len - 1] != '/') {	
+				//	file_name[i][path_len - 1] = '\0';
+				//}
+				
+				/*解析路径，只取最后一个"/"后的文件名*/	
+				for (j = 0; j < path_len; j++) {
+					if (file_name[i][j] == '/') {
+						k = 0;
+						continue;
+					}
+					str[k] = file_name[i][j];
+					k++;
+				}	
+				str[k] = '\0';
+				/*跳过打印./ 和../目录*/
+				if (str[0] == '.') {
+					if (str[1] == '\0') {
+						continue;
+					} else if (str[1] == '.') {
+						if (str[2] == '\0') {
+							continue;
+						}
+					} else {
+						;
+					}
+				}
+				//file_len = strlen(file_name[i]);
+				/*如果目录的最后一个字符不是"/"，则加上"/"*/
+				if(file_name[i][path_len - 1] != '/') {
+					file_name[i][path_len] = '/';
+					file_name[i][path_len + 1] = '\0';
+				}	
+				//strncpy(str, file_name[i], strlen(file_name[i]));
+				//str[strlen(file_name[i])] = '\0';
+				display_dir(file_name[i]);	
+			} else {		/*说明是文件，执行跳出*/
+				;
+			}
+		}
 	}
 
 	return ;
@@ -351,13 +434,14 @@ int cmpbystring(const void *p1, const void *p2)
 void display_file(char *path_name)
 {
 	int i = 0, j = 0;
-	int path_len = 0, file_len = 0;
+	int path_len = 0;
 	char file_name[NAME_MAX+1]; 
 	struct stat buf;
 
 	/*获取文件信息*/
 	if (lstat(path_name, &buf) == -1) {
 		print_error("lstat", __LINE__);
+		fprintf(stderr, " %s\n", path_name);
 		exit(-1);
 	}
 
@@ -403,6 +487,13 @@ void display_sigle(struct stat *buf, char *file_name)
 {
 	int i = 0, len = 0;
 	int file_len = strlen(file_name);
+
+	/*判断是否有-a, 没有-a，则过滤隐藏文件*/
+	if (!P_HASA(g_parameter)) {
+		if (file_name[0] == '.') {
+			return ;
+		}
+	}
 
 	/*如果不足以打印最长文件名则换行*/
 	if (g_row_len_rest < g_dir_longest_file_name) {
@@ -460,7 +551,7 @@ void display_attribute(struct stat *buf, char *file_name)
 
 	/*打印文件信息*/
 	if (P_HASI(g_parameter)) { /*如果有-i参数打印inode*/
-		printf("%-7d ", buf->st_ino);;
+		printf("%-7d ", (int )buf->st_ino);;
 	}
 	printf("%s ",		mode_str);
 	printf("%4d ",		(int )buf->st_nlink);
@@ -578,7 +669,6 @@ void time_to_letters(time_t *time, char *time_str)
  * Revision: 2013/4/10  {
  *				重构do_ls,
  *				循环扫描argv，输出一个或多个目标路径内容,
- *
  *			 }
  * Description: 打印目录
  */
@@ -598,8 +688,9 @@ void do_ls(int argc, char *argv[], int param_count)
 		return ;
 	}
 
-	/*循环扫描argv， 看是否需要打印多个目标路径内容*/
+	/* 循环扫描argv， 看是否需要打印多个目标路径内容 */
 	i = 1;
+
 	do {
 		/*处理路径*/
 		if (argv[i][0] == '-') {
@@ -612,6 +703,7 @@ void do_ls(int argc, char *argv[], int param_count)
 #ifdef DEBUG
 		printf("path_name = %s\n", path_name);
 #endif
+		/*获取目标路径信息*/
 		if (lstat(path_name, &buf) == -1) {
 			print_error("lstat", __LINE__);
 			exit(-1);
@@ -638,11 +730,12 @@ void do_ls(int argc, char *argv[], int param_count)
  * Date: 2013/4/8
  * Description: qsort()函数中的比较函数, 按字典顺序进行排序
  */
+/*
 static int cmpstring(const void *p1, const void *p2)
 {
 	return strcmp((char *)p1, (char *)p2);
 }
-
+*/
 
 /*
  * Date: 2013/4/8
