@@ -320,9 +320,9 @@ int cmpbysize(const void *p1, const void *p2)
 	} else {
 		/*有-r参数逆序输出*/
 		if (P_HASR(g_parameter)) {
-			return (0 - value);
-		} else {
 			return value;
+		} else {
+			return (0 - value);
 		}
 	}
 }
@@ -401,6 +401,7 @@ void display_file(char *path_name)
 void display_sigle(struct stat *buf, char *file_name)
 {
 	int i = 0, len = 0;
+	int file_len = strlen(file_name);
 
 	/*如果不足以打印最长文件名则换行*/
 	if (g_row_len_rest < g_dir_longest_file_name) {
@@ -411,14 +412,24 @@ void display_sigle(struct stat *buf, char *file_name)
 	len = strlen(file_name);
 	len = g_dir_longest_file_name - len;
 	printf("%-s", file_name);
+	g_row_len_rest -= g_dir_longest_file_name;
 
 	/*补齐空格*/
 	for (i = 0; i < len; i++) {
 		printf(" ");
 	}
+	/*补齐由汉字引发的空格不对齐现象*/
+	for (i = 0; i < file_len; i++) {
+		if (file_name[i] < 0) {
+			printf(" ");
+			i += 2;
+			g_row_len_rest -= 1;
+		}
+	}
+
 	/*打印两个空格区分相邻文件*/
 	printf("  ");
-	g_row_len_rest -= g_dir_longest_file_name + 2;
+	g_row_len_rest -= 2;
 
 	return ;
 }
