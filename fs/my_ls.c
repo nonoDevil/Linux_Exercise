@@ -28,6 +28,7 @@
  *						实现cmpbyatime(),
  *						实现处理多个目标路径内容显示 do_ls(),
  *						实现特殊位的处理,
+ *						实现对带汉字文件的对齐显示,
  *					}
  *					2013/4/11 {
  *						实现文件分栏显示,
@@ -423,7 +424,7 @@ void display_sigle(struct stat *buf, char *file_name)
 		if (file_name[i] < 0) {
 			printf(" ");
 			i += 2;
-			g_row_len_rest -= 1;
+			//g_row_len_rest -= 1;
 		}
 	}
 
