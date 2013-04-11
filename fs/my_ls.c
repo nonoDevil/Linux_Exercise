@@ -165,10 +165,7 @@ void display_dir(const char *path_name)
 	g_dir_longest_file_name = 0;
 	g_row_len_rest = 80;
 
-	/*打印目录的路径名*/
-	strncpy(dir_name, path_name, strlen(path_name));
-
-	if ((dir = opendir(dir_name)) == NULL) {
+	if ((dir = opendir(path_name)) == NULL) {
 		print_error("opendir", __LINE__);
 		fprintf(stderr, "%s\n", path_name);
 		exit(-1);
@@ -522,8 +519,15 @@ void display_attribute(struct stat *buf, char *file_name)
 	printf("%-s ",		gid_to_name(buf->st_gid));
 	printf("%10ld ",	(long )buf->st_size);
 	printf("%s ",		time_str);
-	printf("%s\n",		file_name);
 
+	/*根据文件类型显示不同颜色*/
+	if (S_ISDIR(buf->st_mode)) {
+		printf("\033[1;34;1m%s\n\033[0m",		file_name);
+	} else if (S_ISLNK(buf->st_mode)){
+		printf("\033[1;37;1m%s\n\033[0m",		file_name);
+	} else {
+		printf("%s\n",		file_name);
+	}
 
 	return ;
 }
