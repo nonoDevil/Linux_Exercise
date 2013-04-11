@@ -63,7 +63,7 @@
 
 int handle_parameter(int argc, char *argv[]);
 void do_ls(int argc, char *argv[], int param_count);
-void display_dir(char path_name[]);
+void display_dir(const char *path_name);
 int cmpbystring(const void *p1, const void *p2);
 int cmpbysize(const void *p1, const void *p2);
 int cmpbymtime(const void *p1, const void *p2);
@@ -79,7 +79,6 @@ void time_to_letters(time_t *time, char *time_str);
 
 void print_error();
 void print_format();
-//static  int cmpstring(const void *p1, const void *p2);
 
 
 int main(int argc, char *argv[])
@@ -109,11 +108,6 @@ int handle_parameter(int argc, char *argv[])
 	int i = 0, j = 0, k = 0;
 	int param_count = 0;
 
-	/*
-	 * argc < 2 说明命令是 $ ls 
-	 * 列出当前目录下的文件/目录，并且不打印隐藏文件
-	 */
-
 	/* 解析命令，存入param数组*/
 	k = 0;
 	for (i = 1; i < argc; i++) {
@@ -124,13 +118,6 @@ int handle_parameter(int argc, char *argv[])
 			param_count++;
 		}
 	}
-#ifdef DEBUG
-	printf("parameters is : ");
-	for (i = 0; i < k; i++) {
-		printf("%c ", param[i]);
-	}
-	printf("\n");
-#endif
 
 	/* 根据param[]设置命令 eg: -l -a */
 	for (i = 0; i < k; i++) {
@@ -158,19 +145,17 @@ int handle_parameter(int argc, char *argv[])
  * Description: 输出目录内容
  * Parameters: path_name目录名
  */
-void display_dir(char path_name[])
+void display_dir(const char *path_name)
 {
 	DIR *dir = NULL;
 	struct dirent *dir_cur = NULL;
 	struct stat   buf;
 	char str[PATH_MAX+1];
 	char file_name[__FILE_COUNT_MAX__][PATH_MAX+1];
-//	char file_name[255][255];
 	int path_len = 0; 
 	int file_len = 0;
 	int count = 0;
 	int i = 0, j = 0, k = 0;
-	char dir_name[PATH_MAX+1];
 	
 	/*
 	 * 设置目录下的最长文件名长度
@@ -182,22 +167,21 @@ void display_dir(char path_name[])
 
 	/*打印目录的路径名*/
 	strncpy(dir_name, path_name, strlen(path_name));
-	dir_name[strlen(path_name)] = '\0';
-	printf("%s:\n", dir_name);
 
 	if ((dir = opendir(dir_name)) == NULL) {
 		print_error("opendir", __LINE__);
-		fprintf(stderr, "%s\n", dir_name);
+		fprintf(stderr, "%s\n", path_name);
 		exit(-1);
 	}
 
 	/*获取该目录下的所有文件名*/
 	while ((dir_cur = readdir(dir)) != NULL) {
-		path_len = strlen(dir_name);
+		path_len = strlen(path_name);
 		strncpy(file_name[count], path_name, path_len);
 		file_name[count][path_len] = '\0';
 		file_len = strlen(dir_cur->d_name);
 		strncat(file_name[count], dir_cur->d_name, file_len);		
+		file_name[count][path_len+file_len] = '\0';
 		count++;
 		
 		/*获取最长文件名长度*/
@@ -231,8 +215,6 @@ void display_dir(char path_name[])
 #endif
 
 Display:
-	//assert(path_name != NULL);
-//	printf("%s: \n", path_name);
 	/*先打印完文件内容，再处理递归输出文件内容*/
 	for (i = 0; i < count; i++) {
 		display_file(file_name[i]);
@@ -250,6 +232,7 @@ Display:
 			/*获取目标路径信息*/
 			if (lstat(file_name[i], &buf) == -1) {
 				print_error("lstat", __LINE__);
+				fprintf(stderr, "%s\n", file_name[i]);
 				exit(-1);
 			}
 			/*
@@ -259,14 +242,6 @@ Display:
 			if (S_ISDIR(buf.st_mode)) {	/*判断是否是目录*/
 				/*补齐*/
 				path_len = strlen(file_name[i]);
-				//if (file_name[i][path_len - 1] != '/') {
-				//	file_name[i][path_len] = '/';
-				//	file_name[i][path_len + 1] = '\0';
-				//	path_len += 1;
-				//}
-				//if (file_name[i][path_len - 1] != '/') {	
-				//	file_name[i][path_len - 1] = '\0';
-				//}
 				
 				/*解析路径，只取最后一个"/"后的文件名*/	
 				for (j = 0; j < path_len; j++) {
@@ -290,7 +265,6 @@ Display:
 						;
 					}
 				}
-				//file_len = strlen(file_name[i]);
 				/*如果目录的最后一个字符不是"/"，则加上"/"*/
 				path_len = strlen(file_name[i]);
 				if(file_name[i][path_len - 1] != '/') {
@@ -298,10 +272,6 @@ Display:
 					file_name[i][path_len + 1] = '\0';
 				}	
 				path_len = strlen(file_name[i]);
-				printf("test:len = %d file_name = %s\t", path_len, file_name[i]);
-				printf("\n");
-				//strncpy(str, file_name[i], strlen(file_name[i]));
-				//str[strlen(file_name[i])] = '\0';
 				display_dir(file_name[i]);	
 			} else {		/*说明是文件，执行跳出*/
 				;
@@ -463,9 +433,6 @@ void display_file(char *path_name)
 
 	/*判断是否有-l 来进行不同格式的输出*/
 	if (P_HASL(g_parameter)) {
-#ifdef DEBUG
-		printf("I am in \n");
-#endif
 		display_attribute(&buf, file_name);		
 	} else {
 		display_sigle(&buf, file_name);	/*如果后期sigle模式需要-i的时候，需要更改接口增加struct stat buf*/
@@ -721,17 +688,6 @@ void do_ls(int argc, char *argv[], int param_count)
 	} while(i < argc);
 	return ;
 }
-
-/*
- * Date: 2013/4/8
- * Description: qsort()函数中的比较函数, 按字典顺序进行排序
- */
-/*
-static int cmpstring(const void *p1, const void *p2)
-{
-	return strcmp((char *)p1, (char *)p2);
-}
-*/
 
 /*
  * Date: 2013/4/8
