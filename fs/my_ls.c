@@ -36,6 +36,7 @@
  *                  }
  *                  2013/4/12 {
  *                      修复拷贝错误bug, stncpy执行完后需要补充'\0' 
+ *                      用不同颜色显示文件
  *                  }
  *       Compiler:  gcc
  *
@@ -212,6 +213,7 @@ void display_dir(const char *path_name)
 #endif
 
 Display:
+	printf("%-s:\n", path_name);
 	/*先打印完文件内容，再处理递归输出文件内容*/
 	for (i = 0; i < count; i++) {
 		display_file(file_name[i]);
@@ -686,6 +688,13 @@ void do_ls(int argc, char *argv[], int param_count)
 			display_dir(path_name);	
 		} else {		/*说明是文件*/
 			display_file(path_name);
+			/*
+			 * 由于-l参数自动带有\n，所以需要作出判断
+			 * 当打印单个文件时候需要补充一个空格
+			 * */
+			if (!P_HASL(g_parameter)) {
+				printf("\n");
+			}
 		}
 
 		i++;
