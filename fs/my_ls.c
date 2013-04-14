@@ -524,11 +524,17 @@ void display_attribute(struct stat *buf, char *file_name)
 
 	/*根据文件类型显示不同颜色*/
 	if (S_ISDIR(buf->st_mode)) {
-		printf("\033[1;34;1m%s\n\033[0m",		file_name);
+		printf("\033[1;34;1m%s\n\033[0m",		file_name);			/*目录型为蓝色*/
 	} else if (S_ISLNK(buf->st_mode)){
-		printf("\033[1;37;1m%s\n\033[0m",		file_name);
+		printf("\033[1;36;1m%s\n\033[0m",		file_name);			/*链接型为浅蓝色*/
+	} else if (S_ISCHR(buf->st_mode) || S_ISBLK(buf->st_mode)) { 
+		printf("\033[1;33;1m%s\n\033[0m",		file_name);			/*字符型或者块型为黄色*/
+	} else if (S_ISFIFO(buf->st_mode)) {
+		printf("\033[1;37;1m%s\n\033[0m",		file_name);			/*管道文件白色*/
+	} else if (buf->st_mode & 0111) {
+		printf("\033[1;32;1m%s\n\033[0m",		file_name);			/*可执行文件白色*/
 	} else {
-		printf("%s\n",		file_name);
+		printf("%s\n",							file_name);			/*普通文件为白色*/
 	}
 
 	return ;
