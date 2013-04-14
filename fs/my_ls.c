@@ -35,8 +35,11 @@
  *                      实现递归打印目录内的内容,修复打印时的段错误(错误原因：定义的file_name数组过大),
  *                  }
  *                  2013/4/12 {
- *                      修复拷贝错误bug, stncpy执行完后需要补充'\0' 
- *                      用不同颜色显示文件
+ *                      修复拷贝错误bug, stncpy执行完后需要补充'\0', 
+ *                      用不同颜色显示文件,
+ *                  }
+ *                  2013/4/14 {
+ *                      给display_sigle()函数加入颜色显示代码,
  *                  }
  *       Compiler:  gcc
  *
@@ -58,6 +61,7 @@
 #include <pwd.h>
 #include <grp.h>
 #include <time.h>
+#include <sys/ioctl.h>	/*用于获取屏幕宽度所需要的头文件*/
 #include "my_ls.h"
 
 //#define DEBUG 1
@@ -465,7 +469,27 @@ void display_sigle(struct stat *buf, char *file_name)
 
 	len = strlen(file_name);
 	len = g_dir_longest_file_name - len;
-	printf("%-s", file_name);
+
+	/*如果有-i选项，打印inode*/
+	if (P_HASI(g_parameter)) {
+		printf("%-7d ", (int )buf->st_ino);;
+	}
+
+	/*根据文件类型显示不同颜色*/
+	if (S_ISDIR(buf->st_mode)) {
+		printf("\033[1;34;1m%s\033[0m",		file_name);			/*目录型为蓝色*/
+	} else if (S_ISLNK(buf->st_mode)){
+		printf("\033[1;36;1m%s\033[0m",		file_name);			/*链接型为浅蓝色*/
+	} else if (S_ISCHR(buf->st_mode) || S_ISBLK(buf->st_mode)) { 
+		printf("\033[1;33;1m%s\033[0m",		file_name);			/*字符型或者块型为黄色*/
+	} else if (S_ISFIFO(buf->st_mode)) {
+		printf("\033[1;37;1m%s\033[0m",		file_name);			/*管道文件白色*/
+	} else if (buf->st_mode & 0111) {
+		printf("\033[1;32;1m%s\033[0m",		file_name);			/*可执行文件白色*/
+	} else {
+		printf("%s",						file_name);			/*普通文件为白色*/
+	}
+
 	g_row_len_rest -= g_dir_longest_file_name;
 
 	/*补齐空格*/
