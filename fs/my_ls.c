@@ -40,6 +40,7 @@
  *                  }
  *                  2013/4/14 {
  *                      给display_sigle()函数加入颜色显示代码,
+ *                      增加display_sigle()-i的处理,
  *                  }
  *       Compiler:  gcc
  *
