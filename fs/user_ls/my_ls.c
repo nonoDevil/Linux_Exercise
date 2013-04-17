@@ -42,6 +42,9 @@
  *                      给display_sigle()函数加入颜色显示代码,
  *                      增加display_sigle()-i的处理,
  *                  }
+ *                  2013/4/17 {
+ *                      增加display_dir中读取文件的判断条件，读取的文件数量要小于设定的可读文件数量
+ *                  }
  *       Compiler:  gcc
  *
  *         Author:  nonoDevil, linux.kakit@gmail.com
@@ -178,7 +181,7 @@ void display_dir(const char *path_name)
 	}
 
 	/*获取该目录下的所有文件名*/
-	while ((dir_cur = readdir(dir)) != NULL) {
+	while (((dir_cur = readdir(dir)) != NULL) && (count < 255)) {
 		path_len = strlen(path_name);
 		strncpy(file_name[count], path_name, path_len);
 		file_name[count][path_len] = '\0';
