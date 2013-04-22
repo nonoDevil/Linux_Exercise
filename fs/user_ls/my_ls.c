@@ -235,6 +235,11 @@ Display:
 	}
 	/*如果有-R 参数，递归输出目录内容*/
 	if (P_HASUR(g_parameter)) {
+		if (g_max_recursive_number < 0) {
+			return ;
+		} else {
+			g_max_recursive_number--;
+		}
 		for (i = 0; i < count; i++) {
 			/*获取目标路径信息*/
 			if (lstat(file_name[i], &buf) == -1) {
