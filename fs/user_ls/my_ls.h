@@ -56,6 +56,7 @@
 static int g_parameter              = 0;				/*用来记录用户输入的ls - 的参数*/
 static int g_row_len_rest           = __ROW_LEN_MAX__;	/*终端一行剩余可显示字符数*/
 static int g_dir_longest_file_name  = 0;				/*目录文件下最长的文件名长度*/
-//static int g_file_longest_file_name = 0;		/*最长的文件名长度*/
+
+static int g_max_recursive_number   = 3;                /*目录最深递归数*/
 
 #endif 
